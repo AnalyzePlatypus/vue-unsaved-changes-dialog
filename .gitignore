@@ -1,0 +1,5 @@
+dist
+node_modules
+demo-site/node_modules
+src/PopupPositionCalculator.js
+src/vue-unsaved-changes-dialog.vue
