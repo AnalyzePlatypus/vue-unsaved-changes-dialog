@@ -1,21 +1,28 @@
 # Vue Unsaved Changes Dialog
 
-A Vue component inspired by the new skeumorphic segmented control in iOS 13.
+A beautiful unsaved changes dialog, inspired by a component from the Squarespace admin.
 
 [Live demo › ](https://vue-unsaved-changes-dialog.netlify.com)
 
-* Darkens background
-* Displays a responsive popup with "Cancel", "Discard", and "Save"
+* Save, Discard, and Cancel buttons
+* On desktop, popup appears precisely underneath the mouse cursor
 * Smoothly animates in and out
-* On desktop, popup appears directly under the mouse cursor
 * Popup intelligently avoids the window edges and responds to window resizing
-* On mobile, popup is rendered as full-screen modal 
-* Keyboard navigable
-
+* Full responsive: renders as in full-screen on mobile
+* Keyboard navigable/accessible
 
 ![Demo GIF](/demo.gif)
 
-## Install (not live yet)
+### More goodies
+
+* Includes buttery animations for both desktop and mobile
+* Mouse listener is throttled to avoid performance issues (bundles `lodash.throttle`, an extra 2KB)
+* All listeners are deactivated when component is torn down
+* Darkens background
+* Clicking the background dismisses the dialog (same as cancel button)
+* Bundles desktop, mobile, popup positioning logic, and all styles and animations in 14KB
+
+## Install
 
 ```bash
 npm i vue-unsaved-changes-dialog
@@ -25,11 +32,33 @@ npm i vue-unsaved-changes-dialog
 
 ```html
 <VueUnsavedChangesDialog
+  :title="Unsaved Changes"
+  :subtitle="['You have unsaved changes', 'Would you like to save or discard them?']"
   :show="shouldShowDialog"
   @cancel="cancelFn"
   @discard="discardFn"
   @save="saveFn"/>
 ```
+
+## Gallery
+
+### Still
+<div style="display:flex;">
+  <div>
+    <h4>Desktop</h4>
+    <image src="desktop.png">
+  </div>
+  <div>
+    <h4>Mobile</h4>
+    <image src="mobile.png">
+  </div>
+</div>
+
+
+
+
+### Responsive
+![Responsive demo](/responsive.gif)
 
 ## Live Development
 

@@ -1,7 +1,8 @@
 {
   "name": "vue-unsaved-changes-dialog",
   "version": "1.0.0",
-  "description": "",
+  "repository": "https://github.com/AnalyzePlatypus/vue-unsaved-changes-dialog",
+  "description": "Beautiful unsaved changes dialog, inspired by a component from the Squarespace admin",
   "main": "dist/vue-unsaved-changes-dialog.ssr.js",
   "module": "dist/vue-unsaved-changes-dialog.esm.js",
   "unpkg": "dist/vue-unsaved-changes-dialog.min.js",
@@ -23,15 +24,16 @@
     "sass-loader": "^8.0.2"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^7.1.1",
     "cross-env": "^5.2.0",
     "minimist": "^1.2.0",
     "rollup": "^1.12.1",
-    "rollup-plugin-buble": "^0.19.6",
+    "rollup-plugin-buble": "^0.19.8",
     "rollup-plugin-commonjs": "^10.0.0",
     "rollup-plugin-replace": "^2.2.0",
     "rollup-plugin-terser": "^4.0.4",
     "rollup-plugin-vue": "^5.1.6",
     "vue": "^2.6.10",
-    "vue-template-compiler": "^2.6.10"
+    "vue-template-compiler": "^2.6.11"
   }
 }
