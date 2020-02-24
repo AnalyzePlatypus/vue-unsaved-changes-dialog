@@ -1,49 +1,110 @@
 <template>
-    <transition name="edit-guard-popup">
-    <div class='cancel-edit-popup--wrapper' data-test-hook='edit-guard-popup' :style="positionStyle" :class="dynamicClasses" ref="popupWrapper" v-show="show">
-      <div class="text-section">
-        <h1 class="nudge-bottom__quarter">Unsaved Changes</h1>
-        <p>You have made changes.</p>
-        <p>Do you want to save or discard them?</p>
-      </div>
-      <div class="flex horiz justify-between">
-        <button class="button-drab__borderless" data-test-hook="cancel-button" @click="$emit('cancel')">
+  <div>
+    <transition name="unsaved-changes-animate">
+      <div class='unsaved-changes-dialog--wrapper' data-test-hook='unsaved-changes-animate' :style="positionStyle" :class="dynamicClasses" ref="popupWrapper" v-show="show">
+        <div class="text-section">
+          <h1 class="nudge-bottom__quarter">{{title}}</h1>
+          <p>You have made changes.</p>
+          <p>Do you want to save or discard them?</p>
+        </div>
+        <div class="button-row">
+          <button class="button-drab__borderless" data-test-hook="cancel-button" @click.stop="$emit('cancel')">
             Cancel
-        </button>
-        <button class="button-danger__borderless" data-test-hook="discard-button" @click="$emit('discard')">
-          Discard
-        </button>
-        <button class="button-success__borderless" data-test-hook="save-button" @click="$emit('save')">
-          Save
-        </button>
+          </button>
+          <button class="button-danger" data-test-hook="discard-button" @click.stop="$emit('discard')">
+            Discard
+          </button>
+          <button class="button-success" data-test-hook="save-button" @click.stop="$emit('save')">
+            Save
+          </button>
+        </div>
       </div>
-    </div>
-     </transition>
+    </transition>
 
+     <transition name="fade">
+      <div class="unsaved-changes-dialog--background-overlay" v-if="show" @click.stop="handleOverlayClick"></div>
+    </transition>
+  </div>
 </template>
 
 <script>
 
-import calculatePopupPosition from "@/PopupPositionCalculator.js";
+import throttle from "lodash.throttle";
+
+import calculatePopupPosition from "./PopupPositionCalculator.js";
+
+const CLOSE_ANIMATION_DURATION_MS = 400; 
+const MOUSE_LISTENER_THROTTLE_MS = 100;
+
+function dialogWasClosed(newShowVal, oldShowVal) {
+  return newShowVal === false && oldShowVal === true;
+}
 
 export default {
-  name: 'EditGuardPopup',
+  name: 'UnsavedChangesDialog',
+  props: {
+    show: {
+      type: Boolean,
+      required: true
+    },
+    title: {
+      type: String,
+      required: false,
+      default: "Unsaved Changes",
+    }
+  },
   data() {
     return {
-      show: false,
-      positionX: 0,
-      positionY: 0,
-      mouseListener: () => {}
+      position: {
+        x: undefined,
+        y: undefined
+      },
+      lastKnownMousePosition: {
+        x: undefined,
+        y: undefined
+      },
+      mouseClickListener:  throttle((e) => {
+        e = e || window.event;
+        this.lastKnownMousePosition = { x: e.clientX, y: e.clientY }
+        this.calculatePopupPosition()
+        if(this.show) this.deactivateMouseClickListener();
+      }, MOUSE_LISTENER_THROTTLE_MS)
     }
   },
   mounted() {
-    console.log('EditGuardPopup mounted');
+    console.log("Mounted activate mouse listener");
     
-    const handler = (e) => {
-       e = e || window.event;
-      
-      if(!this.$refs.popupWrapper) return;
-      const position = calculatePopupPosition({
+    this.activateMouseClickListener();    
+    this.calculatePopupPosition();
+
+    console.log("Mouse listener installed");
+    
+    window.addEventListener('resize', this.handleWindowResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleWindowResize);
+    this.deactivateMouseClickListener();
+  },
+  methods: {
+    activateMouseClickListener() {
+      document.addEventListener('click', this.mouseClickListener);
+    },
+    deactivateMouseClickListener() {
+      document.addEventListener('click', this.mouseClickListener);
+    },
+    handleWindowResize() {
+      this.calculatePopupPosition();
+    },
+    handleOverlayClick(event) {
+      this.lastKnownMousePosition = {
+        x: event.clientX,
+        y: event.clientY
+      }      
+      this.$emit('cancel');
+    },
+    calculatePopupPosition() {
+      //if(!this.$refs.popupWrapper) return;
+      this.position =  calculatePopupPosition({
         popupDimensions: {
           w: 287,//window.getComputedStyle(this.$refs.popupWrapper).getPropertyValue("width").replace("px", ""),
           h: 123//window.getComputedStyle(this.$refs.popupWrapper).getPropertyValue("height").replace("px", "")
@@ -53,33 +114,32 @@ export default {
           h: window.innerHeight
         },
         mousePosition: {
-          x: e.clientX,
-          y: e.clientY
+          x: this.lastKnownMousePosition.x || this.windowCenterPoint.x,
+          y: this.lastKnownMousePosition.y || this.windowCenterPoint.y
         },
         safeMargin: 30
       })
-
-      this.positionX = position.x;
-      this.positionY = position.y;
-      this.show = true;
-      this.deactivateListener();
     }
-    this.mouseListener = handler;
-    document.addEventListener('mousemove', handler);
   },
-  methods: {
-    deactivateListener() {
-      document.removeEventListener('mousemove', this.mouseListener);
-    }
-  },  
   computed: {
+    windowCenterPoint() {
+      return {
+        x: window.innerWidth / 2,
+        y: window.innerHeight /2
+      }
+    },
     positionStyle() {
-      return `top:${this.positionY}px;left:${this.positionX}px;`;
+      return `top:${this.position.y}px;left:${this.position.x}px;`;
     },
     dynamicClasses() {
-      return [
-        this.show ? "" : "hide" 
-      ]
+      return this.show ? "" : "hide";
+    }
+  },
+  watch: {
+    show(newVal, oldVal) {
+      if(dialogWasClosed(newVal, oldVal)) {
+        setTimeout(this.activateMouseClickListener, CLOSE_ANIMATION_DURATION_MS);
+      }
     }
   }
 };
@@ -89,7 +149,25 @@ export default {
 <style lang='scss'>
 // @import '@/assets/css/global/global.scss';
 
-.cancel-edit-popup--wrapper {
+
+$spacer__half: 16px;
+$spacer__quarter: $spacer__half / 2;
+
+$color-drab: #aaaeb3;
+$color-drab--3: lighten($color-drab, 25);
+$color-drab--4: lighten($color-drab, 20);
+$color-drab--45: lighten($color-drab, 15);
+$color-drab--5: $color-drab;
+
+$color-danger--5: #ce0b24;
+$color-success--5: #3bb26d;
+
+$animation-enter-duration: 0.4s;
+$animation-exit-duration: 0.1s;
+$snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+
+.unsaved-changes-dialog--wrapper {
+  z-index: 6;
   position: fixed;
   
   width: 18rem;
@@ -99,6 +177,12 @@ export default {
   border-radius: 8px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.418);
 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+  .nudge-bottom__quarter {
+    margin-bottom: $spacer__quarter;
+  }
+
   &.hide {
     opacity: 0;
   }
@@ -106,21 +190,33 @@ export default {
   .text-section {
     margin-top: $spacer__half;
     padding-bottom: $spacer__quarter;
+    margin-bottom: $spacer__quarter / 2;
     text-align: center;
-    border-bottom: 1px solid $color-drab--3;
+    transform: scale(1);
   }
 
   h1 {
     font-size: 0.9rem;
     color: $color-drab--5;
     text-transform: uppercase;
-
+    font-weight: 400;
+    letter-spacing: 0.2px;
+    
   }
 
   p {
+    transform: translateZ(0);
     margin: 0px;
     line-height: 1.2rem;
     font-size: 0.9rem;
+  }
+
+  .button-row {
+    border-top: 1px solid $color-drab--3;
+    display: flex;
+    flex-direction: row;
+    justify-items: space-between;
+    width: 100%;
   }
 
   button {
@@ -129,23 +225,57 @@ export default {
     padding: $spacer__quarter 0px  $spacer__quarter 0px;
     border-radius: 0px;
 
-    &.button-danger__borderless:hover {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    text-decoration: none;
+    transition: all 0.3s $snappy-timing-function;
+    white-space: nowrap;
+    height: fit-content;
+    background: transparent;
+
+    color: black;
+
+    &:hover {
+      background: $color-drab--4;
+    }
+
+    &:active {
+      background: $color-drab--45;
+    }
+    
+    &.button-danger {
+      color: $color-danger--5;
+    }
+
+    &.button-danger:hover {
       background: $color-danger--5;
       color: white;
     }
 
-     &.button-success__borderless:hover {
+    &.button-danger:active {
+      background: darken($color-danger--5, 5);
+      color: white;
+    }
+
+    &.button-success {
+      color: $color-success--5;
+    }
+
+    &.button-success:hover {
       background: $color-success--5;
+      color: white;
+    }
+
+    &.button-success:active {
+      background: darken($color-success--5, 5);
       color: white;
     }
 
     &:first-of-type {
       border-bottom-left-radius: 8px;
       border-right: 1px solid $color-drab--3;
-      color: black;
-      &:hover {
-        background: $color-drab--4;
-      }
     }
     &:last-of-type {
       border-bottom-right-radius: 8px;
@@ -154,25 +284,53 @@ export default {
   }
 }
 
-$animation-duration: 0.5s;
 
-.edit-guard-popup-enter-active {
-  animation: edit-guard-popup $animation-duration $snappy-timing-function;
+
+.unsaved-changes-animate-enter-active {
+  animation: unsaved-changes-animate $animation-enter-duration $snappy-timing-function;
 }
 
-.edit-guard-popup-leave-active {
-  animation: edit-guard-popup $animation-duration ease-in reverse;
+.unsaved-changes-animate-leave-active {
+  animation: unsaved-changes-animate $animation-exit-duration ease-in reverse;
 }
 
-@keyframes  edit-guard-popup {
+@keyframes  unsaved-changes-animate {
   0% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.8) translateZ(0) ;
   }
 
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
+  }
+}
+
+.unsaved-changes-dialog--background-overlay {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.fade-enter-active {
+  animation: fade $animation-enter-duration  $snappy-timing-function;
+}
+
+.fade-leave-active {
+  animation: fade 0.3s ease-in reverse;
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
