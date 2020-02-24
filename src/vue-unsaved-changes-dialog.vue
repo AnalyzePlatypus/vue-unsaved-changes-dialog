@@ -1,28 +1,62 @@
 <template>
-  <div>
-    <transition name="unsaved-changes-animate">
-      <div class='unsaved-changes-dialog--wrapper' data-test-hook='unsaved-changes-animate' :style="positionStyle" :class="dynamicClasses" ref="popupWrapper" v-show="show">
-        <div class="text-section">
-          <h1 class="nudge-bottom__quarter">{{title}}</h1>
-          <p>You have made changes.</p>
-          <p>Do you want to save or discard them?</p>
+  <div class="unsaved-changes-dialog">
+    
+    <!-- Desktop dialog -->
+    <div class="desktop-dialog--root">
+      <transition name="fade-zoom">
+        <div class='desktop-dialog--wrapper' :style="positionStyle" :class="dynamicClasses" v-show="show">
+          <div class="text-section">
+            <h1 class="nudge-bottom__quarter">{{title}}</h1>
+            <p v-for="(str, idx) of subtitle" :key="idx">{{str}}</p>
+          </div>
+          <div class="button-row">
+            <button @click.stop="$emit('cancel')">
+              Cancel
+            </button>
+            <button class="button-danger" @click.stop="$emit('discard')">
+              Discard
+            </button>
+            <button class="button-success" @click.stop="$emit('save')">
+              Save
+            </button>
+          </div>
         </div>
-        <div class="button-row">
-          <button class="button-drab__borderless" data-test-hook="cancel-button" @click.stop="$emit('cancel')">
-            Cancel
-          </button>
-          <button class="button-danger" data-test-hook="discard-button" @click.stop="$emit('discard')">
-            Discard
-          </button>
-          <button class="button-success" data-test-hook="save-button" @click.stop="$emit('save')">
-            Save
-          </button>
-        </div>
-      </div>
-    </transition>
+      </transition>
+    </div>
 
+    <!-- mobile dialog -->
+    <div class="mobile-dialog--root">
+      <!-- main dialog -->
+      <transition name="mobile-animate">
+          <div v-if="show" class='mobile-dialog--wrapper' :class="dynamicClasses">
+            <div class="text-section">
+              <h1 class="nudge-bottom__quarter">{{title}}</h1>
+              <p v-for="(str, idx) of subtitle" :key="idx">{{str}}</p>
+            </div>
+            <div class="button-row">
+              <button class="button-success" @click.stop="$emit('save')">
+                Save
+              </button>
+              <button class="button-danger" @click.stop="$emit('discard')">
+                Discard
+              </button>
+            </div>
+          </div>
+      </transition>
+
+      <!-- floating cancel button -->
+      <transition name="mobile-animate">
+          <div class='mobile-dialog--cancel-button' v-if="show">
+            <button data-test-hook="cancel-button" @click.stop="$emit('cancel')">
+              Cancel
+            </button>
+          </div>
+      </transition>
+    </div>
+
+     <!-- darkened backdrop -->
      <transition name="fade">
-      <div class="unsaved-changes-dialog--background-overlay" v-if="show" @click.stop="handleOverlayClick"></div>
+      <div class="unsaved-changes-dialog--background-overlay" v-if="show" @click.stop="$emit('cancel')"></div>
     </transition>
   </div>
 </template>
@@ -30,7 +64,6 @@
 <script>
 
 import throttle from "lodash.throttle";
-
 import calculatePopupPosition from "./PopupPositionCalculator.js";
 
 const CLOSE_ANIMATION_DURATION_MS = 400; 
@@ -51,6 +84,11 @@ export default {
       type: String,
       required: false,
       default: "Unsaved Changes",
+    },
+    subtitle: {
+      type: String | Array,
+      required: false,
+      default: () => ["You have made changes.", "Do you want to save or discard them?"]
     }
   },
   data() {
@@ -71,19 +109,14 @@ export default {
       }, MOUSE_LISTENER_THROTTLE_MS)
     }
   },
-  mounted() {
-    console.log("Mounted activate mouse listener");
-    
-    this.activateMouseClickListener();    
+  mounted() {    
+    this.activateMouseClickListener();
     this.calculatePopupPosition();
-
-    console.log("Mouse listener installed");
-    
     window.addEventListener('resize', this.handleWindowResize);
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.handleWindowResize);
     this.deactivateMouseClickListener();
+    window.removeEventListener('resize', this.handleWindowResize);
   },
   methods: {
     activateMouseClickListener() {
@@ -94,13 +127,6 @@ export default {
     },
     handleWindowResize() {
       this.calculatePopupPosition();
-    },
-    handleOverlayClick(event) {
-      this.lastKnownMousePosition = {
-        x: event.clientX,
-        y: event.clientY
-      }      
-      this.$emit('cancel');
     },
     calculatePopupPosition() {
       //if(!this.$refs.popupWrapper) return;
@@ -147,8 +173,6 @@ export default {
 
 <!-- Add 'scoped' attribute to limit CSS to this component only -->
 <style lang='scss'>
-// @import '@/assets/css/global/global.scss';
-
 
 $spacer__half: 16px;
 $spacer__quarter: $spacer__half / 2;
@@ -163,20 +187,34 @@ $color-danger--5: #ce0b24;
 $color-success--5: #3bb26d;
 
 $animation-enter-duration: 0.4s;
-$animation-exit-duration: 0.1s;
+$animation-exit-duration: 0.15s;
 $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
 
-.unsaved-changes-dialog--wrapper {
-  z-index: 6;
-  position: fixed;
-  
-  width: 18rem;
-  height: fit-content;
+// Switch between desktop and mobile dialogs
+// using CSS media queries
+.unsaved-changes-dialog {
+  @media screen and (min-width: 600px){
+    .desktop-dialog--root {
+      display: block;
+    }
 
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.418);
+    .mobile-dialog--root {
+      display: none;
+    }
+  }
 
+  @media screen and (max-width: 599px){
+    .desktop-dialog--root {
+      display: none;
+    }
+
+    .mobile-dialog--root {
+      display: block;
+    }
+  }
+}
+
+.unsaved-changes-dialog {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
   .nudge-bottom__quarter {
@@ -192,7 +230,6 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
     padding-bottom: $spacer__quarter;
     margin-bottom: $spacer__quarter / 2;
     text-align: center;
-    transform: scale(1);
   }
 
   h1 {
@@ -201,7 +238,6 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
     text-transform: uppercase;
     font-weight: 400;
     letter-spacing: 0.2px;
-    
   }
 
   p {
@@ -214,9 +250,6 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
   .button-row {
     border-top: 1px solid $color-drab--3;
     display: flex;
-    flex-direction: row;
-    justify-items: space-between;
-    width: 100%;
   }
 
   button {
@@ -272,8 +305,75 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
       background: darken($color-success--5, 5);
       color: white;
     }
+  }
 
-    &:first-of-type {
+  // Mobile buttons
+  .mobile-dialog--root button {
+    padding: 12px 0px;
+    &:not(:last-of-type) {
+      border-bottom: 1px solid $color-drab--3;
+    }
+    &:last-of-type {
+      border-radius: 0px 0px 8px 8px;
+    }
+    &:only-child { // This prevents the cancel button from having rounded bottom and sharp top corners like a standard final button
+      border-radius: 8px;
+    }
+  }
+}
+
+
+.unsaved-changes-dialog {
+  .mobile-dialog--wrapper {
+    z-index: 6;
+    position: fixed;
+    
+    width: 95%;
+    top: 50%;
+    left: 50%;  
+    transform: translateX(-50%) translateY(-50%);
+    
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.418);
+
+    .button-row {
+      flex-direction: column;
+    }
+  }
+
+  .mobile-dialog--cancel-button {
+    position: fixed;
+    bottom: 8px;
+    width: 95%;
+    z-index: 6;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.418);
+    
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+.unsaved-changes-dialog .desktop-dialog--wrapper {
+  z-index: 6;
+  position: fixed;
+  width: 18rem;
+  height: fit-content;
+
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.418);
+
+  .button-row {
+    flex-direction: row;
+    justify-items: space-between;
+    width: 100%;
+  }
+
+  button {
+     &:first-of-type {
       border-bottom-left-radius: 8px;
       border-right: 1px solid $color-drab--3;
     }
@@ -285,26 +385,73 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 
+// Animations
 
-.unsaved-changes-animate-enter-active {
-  animation: unsaved-changes-animate $animation-enter-duration $snappy-timing-function;
+.fade-zoom-enter-active {
+  animation: fade-zoom $animation-enter-duration $snappy-timing-function;
 }
 
-.unsaved-changes-animate-leave-active {
-  animation: unsaved-changes-animate $animation-exit-duration ease-in reverse;
+.fade-zoom-leave-active {
+  animation: fade-zoom $animation-exit-duration ease-in reverse;
 }
-
-@keyframes  unsaved-changes-animate {
+@keyframes fade-zoom {
   0% {
     opacity: 0;
-    transform: scale(0.8) translateZ(0) ;
+    transform: scale(0.8);
   }
 
   100% {
     opacity: 1;
-    transform: scale(1) translateZ(0);
+    transform: scale(1);
   }
 }
+
+// Mobile animations
+
+// Main dialog
+
+.mobile-dialog--wrapper.mobile-animate-enter-active {
+  animation: fade-zoom-autocenter-animation $animation-enter-duration $snappy-timing-function;
+}
+
+.mobile-dialog--wrapper.mobile-animate-leave-active {
+  animation: reverse fade-zoom-autocenter-animation $animation-exit-duration $snappy-timing-function;
+}
+
+
+@keyframes fade-zoom-autocenter-animation {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-50%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-50%) scale(1);
+  }
+}
+
+// Cancel button
+
+.mobile-dialog--cancel-button.mobile-animate-enter-active {
+  animation: $animation-enter-duration close-button-animation $snappy-timing-function;
+}
+
+.mobile-dialog--cancel-button.mobile-animate-leave-active {
+  animation: reverse $animation-exit-duration close-button-animation $snappy-timing-function;
+}
+
+@keyframes close-button-animation {
+   0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0px);
+  }
+}
+
+// Background overlay
 
 .unsaved-changes-dialog--background-overlay {
   position: fixed;
@@ -333,5 +480,4 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
     opacity: 1;
   }
 }
-
 </style>
