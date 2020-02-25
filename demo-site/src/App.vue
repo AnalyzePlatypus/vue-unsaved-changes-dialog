@@ -17,7 +17,6 @@ export default {
   name: 'App',
   data() {
     return {
-      visible: false,
       shouldShowDialog: false,
     }
   },

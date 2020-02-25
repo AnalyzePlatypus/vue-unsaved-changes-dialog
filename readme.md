@@ -31,14 +31,89 @@ npm i vue-unsaved-changes-dialog
 ## Usage
 
 ```html
-<VueUnsavedChangesDialog
+
+<button @click="attemptToGoBack">Back</button>
+
+<UnsavedChangesDialog
   :title="Unsaved Changes"
   :subtitle="['You have unsaved changes', 'Would you like to save or discard them?']"
   :show="shouldShowDialog"
-  @cancel="cancelFn"
-  @discard="discardFn"
-  @save="saveFn"/>
+  @cancel="closePopup"
+  @discard="discard"
+  @save="save"/>
 ```
+
+Detailed use case:
+
+```javascript
+
+import UnsavedChangesDialog from 'vue-unsaved-changes-dialog';
+
+export default {
+  name: 'App',
+  data() {
+    return {
+      shouldShowDialog: false,
+    }
+  },
+  methods: {
+    attemptToGoBack() {
+      this.hasUnsavedChanges ? 
+        this.showPopup() :
+        this.exit();
+    },
+    exit() {
+      this.closePopup();
+      // and leave the view
+    },
+    showPopup() {
+      this.shouldShowDialog = true;
+    },
+    closePopup() {
+      this.shouldShowDialog = false;
+    },
+    discard() {
+      this.discardEdits();
+      this.exit();
+    },
+    discardEdits() {
+      // your code here
+    },
+    async save() {
+      try {
+        await this.saveChangesToServer();
+        this.exit();
+      } catch(e) {
+        console.error(e);
+      }
+    },
+    async saveChangesToServer() {
+      // your code here
+    }
+  },
+  computed: {
+    hasUnsavedChanges() {
+      // check for unsaved changes
+    }
+  },
+  components: {
+    UnsavedChangesDialog
+  }
+}
+```
+
+## Builds
+
+There are 5 files in the `dist` directory:
+
+
+| Extension | Use case | Notes |
+|---|---|---|
+|`.esm.js`| Standard ES6 module | Default build, for use in a Vue CLI project. Already minified for production |
+|`no-css.esm.js`| Standard ES6 module without styling | ES6 build with all styles extracted to a separate `.esm.css` file for customization/overriding |
+|`no-css.esm.css`| CSS styles for the unstyled ES6 build | Copy this into your project to customize the UI |
+|`.min.js`| Browser build, requires no build system. | This is the file you'd get from the UNPKG cdn|
+|`.ssr.js`| Rollup build for use with SSR. | Honestly, I'm not sure what it is, but it was in the rollup template I used. |
 
 ## Gallery
 

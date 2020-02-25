@@ -5,7 +5,9 @@ import commonjs from 'rollup-plugin-commonjs';
 import replace from 'rollup-plugin-replace';
 import { terser } from 'rollup-plugin-terser';
 import minimist from 'minimist';
-import resolve from '@rollup/plugin-node-resolve';
+
+import resolve from '@rollup/plugin-node-resolve'; // This is used for bundling 'lodash.throttle'
+import css from 'rollup-plugin-css-only';
 
 const argv = minimist(process.argv.slice(2));
 
@@ -44,6 +46,7 @@ const globals = {
 
 // Customize configs for individual targets
 const buildFormats = [];
+
 if (!argv.format || argv.format === 'es') {
   const esConfig = {
     ...baseConfig,
@@ -64,6 +67,35 @@ if (!argv.format || argv.format === 'es') {
     ],
   };
   buildFormats.push(esConfig);
+}
+
+if (!argv.format || argv.format === 'es-no-css') {
+  const esNoCSSConfig = {
+    ...baseConfig,
+    output: {
+      file: 'dist/vue-unsaved-changes-dialog-no-css.esm.js',
+      format: 'esm',
+      exports: 'named',
+    },
+    plugins: [
+      
+      ...baseConfig.plugins.preVue,
+      css(),
+      vue({
+        css: false,
+        template: {
+          isProduction: true,
+        },
+      }),
+      ...baseConfig.plugins.postVue,
+      terser({
+        output: {
+          ecma: 6,
+        },
+      }),
+    ],
+  };
+  buildFormats.push(esNoCSSConfig);
 }
 
 if (!argv.format || argv.format === 'cjs') {
