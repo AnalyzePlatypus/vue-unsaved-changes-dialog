@@ -1,6 +1,6 @@
 {
   "name": "vue-unsaved-changes-dialog",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "repository": "https://github.com/AnalyzePlatypus/vue-unsaved-changes-dialog",
   "description": "Beautiful unsaved changes dialog, inspired by a component from the Squarespace admin",
   "main": "dist/vue-unsaved-changes-dialog.ssr.js",

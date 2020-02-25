@@ -6,18 +6,21 @@
       <transition name="fade-zoom">
         <div class='desktop-dialog--wrapper' :style="positionStyle" :class="dynamicClasses" v-show="show">
           <div class="text-section">
-            <h1 class="nudge-bottom__quarter">{{title}}</h1>
+            <h1>
+              <slot name="title">{{title}}</slot>
+            </h1>
             <p v-for="(str, idx) of subtitle" :key="idx">{{str}}</p>
+             <slot name="body"/>
           </div>
           <div class="button-row">
             <button @click.stop="$emit('cancel')">
-              Cancel
+              <slot name="cancel-button">Cancel</slot>
             </button>
             <button class="button-danger" @click.stop="$emit('discard')">
-              Discard
+              <slot name="discard-button">Discard</slot>
             </button>
             <button class="button-success" @click.stop="$emit('save')">
-              Save
+              <slot name="save-button">Save</slot>
             </button>
           </div>
         </div>
@@ -30,16 +33,19 @@
       <transition name="mobile-animate">
           <div v-if="show" class='mobile-dialog--wrapper' :class="dynamicClasses">
             <div class="text-section">
-              <h1 class="nudge-bottom__quarter">{{title}}</h1>
+              <h1>
+                <slot name="title">{{title}}</slot>
+              </h1>
               <p v-for="(str, idx) of subtitle" :key="idx">{{str}}</p>
+              <slot name="body"/>
             </div>
             <div class="button-row">
               <button class="button-success" @click.stop="$emit('save')">
-                Save
+                <slot name="save-button">Save</slot>
               </button>
               <button class="button-danger" @click.stop="$emit('discard')">
-                Discard
-              </button>
+                <slot name="discard-button">Discard</slot>
+            </button>
             </div>
           </div>
       </transition>
@@ -47,8 +53,8 @@
       <!-- floating cancel button -->
       <transition name="mobile-animate">
           <div class='mobile-dialog--cancel-button' v-if="show">
-            <button data-test-hook="cancel-button" @click.stop="$emit('cancel')">
-              Cancel
+             <button @click.stop="$emit('cancel')">
+              <slot name="cancel-button">Cancel</slot>
             </button>
           </div>
       </transition>
@@ -217,10 +223,6 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
 .unsaved-changes-dialog {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
-  .nudge-bottom__quarter {
-    margin-bottom: $spacer__quarter;
-  }
-
   &.hide {
     opacity: 0;
   }
@@ -238,6 +240,7 @@ $snappy-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
     text-transform: uppercase;
     font-weight: 400;
     letter-spacing: 0.2px;
+    margin-bottom: $spacer__quarter;
   }
 
   p {

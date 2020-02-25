@@ -10,6 +10,7 @@ A beautiful unsaved changes dialog, inspired by a component from the Squarespace
 * Popup intelligently avoids the window edges and responds to window resizing
 * Full responsive: renders as in full-screen on mobile
 * Keyboard navigable/accessible
+* All text is replaceable
 
 ![Demo GIF](/demo.gif)
 
@@ -101,6 +102,37 @@ export default {
   }
 }
 ```
+
+## Customizing
+
+### Text
+
+The title and body text can be customized with props:
+
+```html
+<UnsavedChangesDialog
+  :title="Unsaved Changes"
+  :subtitle="['You have unsaved changes', 'Would you like to save or discard them?']"
+ />
+```
+
+> `subtitle` accepts both `String`s and `String` `Array`s. If an array is supplied, a `<p>` element will be inserted for every one.
+
+### Button text & icons
+
+The buttons can be customized using the `slot`s API:
+
+```html
+<UnsavedChangesDialog
+  :title="Unsaved Changes">
+  <template name="title">Destory the things?</template>
+  <template name="body">Description</template>
+  <template name="cancel-button">❌</template>
+  <template name="discard-button">💀</template>
+  <template name="save-button">✅</template>
+</UnsavedChangesDialog>
+```
+
 
 ## Builds
 
