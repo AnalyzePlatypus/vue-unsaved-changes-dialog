@@ -22,6 +22,7 @@ A beautiful unsaved changes dialog, inspired by a component from the Squarespace
 * Darkens background
 * Clicking the background dismisses the dialog (same as cancel button)
 * Bundles desktop, mobile, popup positioning logic, and all styles and animations in 14KB
+* No dependencies
 
 ## Install
 
