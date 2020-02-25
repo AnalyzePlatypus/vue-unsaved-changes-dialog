@@ -120,7 +120,8 @@ The title and body text can be customized with props:
 
 ### Button text & icons
 
-The buttons can be customized using the `slot`s API:
+The buttons can be customized using the `slot`s API.
+You can inject your own text, icons, html, etc. into any part of the dialog.
 
 ```html
 <UnsavedChangesDialog
@@ -132,6 +133,11 @@ The buttons can be customized using the `slot`s API:
   <template name="save-button">✅</template>
 </UnsavedChangesDialog>
 ```
+
+### Styles & Animations
+
+To use your own styles, use the unstyled build (`no-css.esm.js`).
+You can copy the default styles (`no-css.esm.css`) into your project and customize it.
 
 
 ## Builds
