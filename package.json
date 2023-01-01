@@ -33,7 +33,7 @@
     "vue": "^2.6.10",
     "vue-template-compiler": "^2.6.11",
     "node-sass": "^4.13.1",
-    "sass-loader": "^8.0.2",
+    "sass-loader": "^13.2.0",
     "lodash.throttle": "^4.1.1"
   }
 }
